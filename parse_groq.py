@@ -18,47 +18,49 @@ def parse_to_json(text: str) -> dict:
             "description": "No readable text was extracted from the document."
         }
     
-    prompt = f"""You are an expert document analyzer and summarization specialist.
+    prompt = f"""You are a professional content analyst creating summaries for a knowledge management system.
 
-Your task: Analyze the document below and create a comprehensive, well-structured summary.
+Your goal: Transform the document below into a clear, engaging summary that someone can quickly understand and act upon.
 
-REQUIREMENTS:
-1. **Title**: Generate a clear, descriptive title (5-10 words) that captures the document's main topic
+WRITING STYLE:
+- Write naturally, as if explaining to a colleague
+- Avoid phrases like "This document discusses..." or "The document presents..."
+- Get straight to the point
+- Use active voice and direct language
+- Be conversational but professional
 
-2. **Summary**: Create a detailed summary (300-500 words) that includes:
-   
-   📌 **Overview**: 
-   - What is this document about? (2-3 sentences)
-   - Main purpose or objective
-   
-   🔑 **Key Points**:
-   - List all important information using bullet points
-   - Include specific details, numbers, dates, and facts
-   - Organize by themes or sections if applicable
-   
-   📊 **Important Details**:
-   - Highlight critical data, statistics, or findings
-   - Mention any deadlines, amounts, or measurements
-   - Note any action items or recommendations
-   
-   ✨ **Conclusion**:
-   - Summarize the main takeaway
-   - Mention any next steps or follow-up items
+STRUCTURE YOUR SUMMARY (300-500 words):
 
-FORMATTING RULES:
-- Use **bold** for section headers
+**Overview**
+Start directly with what matters. Explain the main topic and why it's important in 2-3 sentences.
+
+**Key Points**
+• List the most important information
+• Include specific details, numbers, dates, and facts
+• Be concrete and actionable
+• Use clear, simple language
+
+**Important Details**
+• Highlight critical data, statistics, or findings
+• Mention deadlines, amounts, or measurements if present
+• Note any action items or recommendations
+
+**Conclusion**
+End with the main takeaway and any next steps. Keep it brief and actionable.
+
+FORMATTING:
+- Use **bold** for section headers only
 - Use bullet points (•) for lists
-- Use clear paragraph breaks for readability
-- Keep the tone professional and concise
-- Focus on substance over fluff
+- Keep paragraphs short and scannable
+- Write like a human, not a robot
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON:
 {{
-  "title": "Your generated title here",
-  "description": "**Overview**\\n\\nYour detailed summary here with proper formatting...\\n\\n**Key Points**\\n• Point 1\\n• Point 2\\n\\n**Important Details**\\n• Detail 1\\n• Detail 2\\n\\n**Conclusion**\\n\\nYour conclusion here."
+  "title": "Clear, specific title (5-10 words)",
+  "description": "Your natural, engaging summary with proper formatting"
 }}
 
-DOCUMENT TO ANALYZE:
+DOCUMENT:
 ---
 {text}
 ---
@@ -68,8 +70,8 @@ JSON Response:"""
     completion = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,  # Slightly higher for better creativity
-        max_tokens=2000   # Increased token limit for longer summaries
+        temperature=0.4,  # Slightly higher for more natural language
+        max_tokens=2000
     )
 
     response = completion.choices[0].message.content.strip()
