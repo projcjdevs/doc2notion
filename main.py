@@ -18,4 +18,4 @@ def doc_to_notion(path):
     print(f"✅ Done! Created Notion page: {page_id}")
 
 if __name__ == "__main__":
-    doc_to_notion("Screenshot 2025-11-17 124121.png")
+    doc_to_notion("formal_13_page_document.docx")
