@@ -1,0 +1,10 @@
+Pillow
+pytesseract
+PyPDF2
+python-docx
+notion-client
+python-dotenv
+groq
+fastapi
+uvicorn[standard]
+python-multipart
