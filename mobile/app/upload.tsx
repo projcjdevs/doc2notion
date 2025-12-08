@@ -9,6 +9,7 @@ import {
   ScrollView,
   Animated,
   Platform,
+  Alert,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -80,51 +81,96 @@ export default function UploadScreen() {
   };
 
   const uploadDocument = async () => {
-    if (!image && !document) return;
+  if (!image && !document) {
+    Alert.alert('No file selected', 'Please select an image or document first');
+    return;
+  }
 
-    setLoading(true);
-    setResult(null);
+  setLoading(true);
+  setResult(null);
 
-    // Animate progress bar
-    Animated.timing(uploadProgress, {
-      toValue: 1,
-      duration: 2000,
-      useNativeDriver: false,
-    }).start();
+  // Animate progress bar
+  Animated.timing(uploadProgress, {
+    toValue: 1,
+    duration: 2000,
+    useNativeDriver: false,
+  }).start();
 
-    try {
-      const formData = new FormData();
+  try {
+    const formData = new FormData();
+    
+    if (image) {
+      // Upload image
+      formData.append('file', {
+        uri: image,
+        type: 'image/jpeg',
+        name: 'document.jpg',
+      } as any);
+    } else if (document) {
+      // Upload document - fix MIME type handling
+      let mimeType = document.mimeType;
       
-      if (image) {
-        formData.append('file', {
-          uri: image,
-          type: 'image/jpeg',
-          name: 'document.jpg',
-        } as any);
-      } else if (document) {
-        formData.append('file', {
-          uri: document.uri,
-          type: document.mimeType,
-          name: document.name,
-        } as any);
+      // Fix for DOCX files (mobile sometimes sends wrong MIME type)
+      if (document.name.toLowerCase().endsWith('.docx')) {
+        mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      } else if (document.name.toLowerCase().endsWith('.pdf')) {
+        mimeType = 'application/pdf';
+      } else if (document.name.toLowerCase().endsWith('.doc')) {
+        mimeType = 'application/msword';
       }
-
-      const response = await axios.post(`${API_URL}/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 90000,
-      });
-
-      setResult(response.data);
-      uploadProgress.setValue(0);
-    } catch (error: any) {
-      console.error(error);
-      uploadProgress.setValue(0);
-    } finally {
-      setLoading(false);
+      
+      formData.append('file', {
+        uri: document.uri,
+        type: mimeType,
+        name: document.name,
+      } as any);
     }
-  };
+
+    console.log('📤 Uploading file:', document?.name || 'image');
+
+    const response = await axios.post(`${API_URL}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 90000, // 90 seconds for larger files
+    });
+
+    setResult(response.data);
+    Alert.alert('Success! ✅', `Created: "${response.data.title}"`);
+    uploadProgress.setValue(0);
+  } catch (error: any) {
+    console.error('Upload error:', error);
+    uploadProgress.setValue(0);
+    
+    // Better error messages
+    let errorMessage = 'An error occurred while uploading';
+    
+    if (error.response) {
+      // Server responded with error
+      const status = error.response.status;
+      const detail = error.response.data?.detail || error.response.data?.message;
+      
+      if (status === 400) {
+        errorMessage = detail || 'Invalid file type. Please use JPG, PNG, PDF, or DOCX files.';
+      } else if (status === 422) {
+        errorMessage = detail || 'Could not extract text from the document. Please try a clearer image or different file.';
+      } else if (status === 500) {
+        errorMessage = detail || 'Server error. Please try again.';
+      } else {
+        errorMessage = detail || `Error ${status}: ${error.message}`;
+      }
+    } else if (error.request) {
+      // Request made but no response
+      errorMessage = 'Cannot connect to server. Check your network connection.';
+    } else {
+      errorMessage = error.message;
+    }
+    
+    Alert.alert('Upload Failed', errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const clearSelection = () => {
     setImage(null);
